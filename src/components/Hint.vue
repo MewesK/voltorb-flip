@@ -38,9 +38,6 @@ export default defineComponent({
 </template>
 
 <style scoped>
-.hint {
-}
-
 .number-sum, .number-bombs {
   display: flex;
   justify-content: end;

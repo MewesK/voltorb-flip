@@ -32,6 +32,4 @@ export default defineComponent({
 </template>
 
 <style scoped>
-.tile {
-}
 </style>
