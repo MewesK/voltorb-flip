@@ -1,9 +1,9 @@
 <script lang="ts">
-import { defineComponent } from 'vue'
-import NumberDisplay, { Types } from './NumberDisplay.vue'
+import { defineComponent } from "vue";
+import NumericDisplay, { FontStyles } from "./NumericDisplay.vue";
 
 export default defineComponent({
-  components: { NumberDisplay },
+  components: { NumericDisplay },
   props: {
     bombs: {
       type: Number,
@@ -15,30 +15,31 @@ export default defineComponent({
     },
   },
   setup() {
-    return { Types }
+    return { FontStyles };
   },
-})
+});
 </script>
 
 <template>
   <div class="hint">
-    <number-display
+    <numeric-display
       class="number-sum"
-      :value="5"
+      :value="sum"
       :digits="2"
-      :type="Types.TILE"
+      :font-style="FontStyles.TILE"
     />
-    <number-display
+    <numeric-display
       class="number-bombs"
-      :value="1"
+      :value="bombs"
       :digits="1"
-      :type="Types.TILE"
+      :font-style="FontStyles.TILE"
     />
   </div>
 </template>
 
 <style scoped>
-.number-sum, .number-bombs {
+.number-sum,
+.number-bombs {
   display: flex;
   justify-content: end;
   padding-right: 1px;
