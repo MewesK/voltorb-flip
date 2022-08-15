@@ -114,11 +114,14 @@ export default defineComponent({
 
       if (this.tiles[rowIndex][colIndex].value === 0) {
         // Game over
-        console.log(`You lost the game with ${this.totalScore} points.`);
+        console.log(
+          `You lost the game in level ${this.level + 1} with ${
+            this.totalScore
+          } points.`
+        );
 
         // Reset
-        this.totalScore = 0;
-        this.initializeLevel(0);
+        this.reset();
       } else {
         // Increase score
         this.increaseScore(this.tiles[rowIndex][colIndex].value);
@@ -137,8 +140,7 @@ export default defineComponent({
               console.log(`You won the game with ${this.totalScore} points.`);
 
               // Reset
-              this.totalScore = 0;
-              this.initializeLevel(0);
+              this.reset();
             } else {
               this.initializeLevel(this.level + 1);
             }
@@ -154,11 +156,6 @@ export default defineComponent({
       if (!this.tiles[rowIndex][colIndex].show) {
         this.tiles[rowIndex][colIndex].memoBomb =
           !this.tiles[rowIndex][colIndex].memoBomb;
-        console.log(
-          rowIndex,
-          colIndex,
-          this.tiles[rowIndex][colIndex].memoBomb
-        );
       }
     },
     onResize() {
@@ -224,8 +221,6 @@ export default defineComponent({
 
       // Set bombs randomly
       initializeValue(0, preset[2]);
-
-      console.log(preset, this.tiles);
     },
     increaseScore(multiplier: number) {
       this.score = this.score === 0 ? multiplier : this.score * multiplier;
@@ -257,6 +252,12 @@ export default defineComponent({
           previousValue + currentValue[colIndex].value,
         0
       );
+    },
+    reset() {
+      setTimeout(() => {
+        this.totalScore = 0;
+        this.initializeLevel(0);
+      }, 1000);
     },
   },
 });
