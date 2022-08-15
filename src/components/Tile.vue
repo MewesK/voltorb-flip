@@ -16,10 +16,6 @@ export default defineComponent({
       type: Boolean,
       required: true,
     },
-    memoBomb: {
-      type: Boolean,
-      default: false,
-    },
     memo1: {
       type: Boolean,
       default: false,
@@ -32,10 +28,14 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    memoBomb: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     path() {
-      switch (this.value) { 
+      switch (this.value) {
         case 1:
           return tile1;
         case 2:
@@ -45,7 +45,7 @@ export default defineComponent({
         default:
           return tileBomb;
       }
-    }
+    },
   },
 });
 </script>
@@ -54,7 +54,11 @@ export default defineComponent({
   <div :class="{ tile: true, show }">
     <div class="tile-inner">
       <div class="tile-inner-front">
-        <img src="../assets/tile_hidden.png" />
+        <img src="../assets/tile_back.png" />
+        <img v-if="memo1" src="../assets/tile_memo_1.png" />
+        <img v-if="memo2" src="../assets/tile_memo_2.png" />
+        <img v-if="memo3" src="../assets/tile_memo_3.png" />
+        <img v-if="memoBomb" src="../assets/tile_memo_bomb.png" />
       </div>
       <div class="tile-inner-back">
         <img :src="path" />
@@ -68,15 +72,20 @@ export default defineComponent({
   line-height: 0;
 }
 .tile-inner {
-  transition: transform 0.5s;
+  transition: transform 0.2s;
   transform-style: preserve-3d;
 }
-.tile.show .tile-inner, .tile-inner-back {
+.tile.show .tile-inner,
+.tile-inner-back {
   transform: rotateY(180deg);
 }
-.tile-inner-front, .tile-inner-back {
+.tile-inner-front,
+.tile-inner-back {
   position: absolute;
   -webkit-backface-visibility: hidden; /* Safari */
   backface-visibility: hidden;
+}
+.tile-inner-front img {
+  position: absolute;
 }
 </style>

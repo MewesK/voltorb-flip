@@ -14,6 +14,9 @@ export interface TileType {
   memo3: boolean;
 }
 
+const SIZE = 5;
+const MAX_TRIES = 1000;
+
 // ×2s, ×3s, Voltorb
 const LEVEL_DATA = [
   [
@@ -72,7 +75,7 @@ const LEVEL_DATA = [
     [2, 6, 10],
     [7, 3, 10],
   ],
-];
+] as Array<Array<Array<number>>>;
 
 export default defineComponent({
   components: { Hint, NumericDisplay, Tile },
@@ -81,84 +84,179 @@ export default defineComponent({
   },
   data() {
     return {
-      level: 1,
+      level: 0,
       totalScore: 0,
       zoom: 1,
       // Current
       score: 0,
-      tiles: [
-        [
-          { value: 1, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 3, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 1, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-        ] as Array<TileType>,
-        [
-          { value: 1, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 2, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 3, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 3, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-        ] as Array<TileType>,
-        [
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 1, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 2, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-        ] as Array<TileType>,
-        [
-          { value: 2, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 2, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 1, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-        ] as Array<TileType>,
-        [
-          { value: 1, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 0, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 2, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-          { value: 3, show: false, memoBomb: false, memo1: false, memo2: false, memo3: false } as TileType,
-        ] as Array<TileType>,
-      ] as Array<Array<TileType>>,
+      tileCount: 0,
+      tiles: [[]] as Array<Array<TileType>>,
     };
   },
+  created() {
+    this.initializeLevel(0);
+  },
   mounted() {
-    window.addEventListener('resize', this.onResize);
+    window.addEventListener("resize", this.onResize);
     this.onResize();
   },
   unmounted() {
-    window.removeEventListener('resize', this.onResize);
+    window.removeEventListener("resize", this.onResize);
   },
   methods: {
     onClick(rowIndex: number, colIndex: number) {
+      if (this.tileCount === 0) {
+        return;
+      }
+
+      // Show tile
       this.tiles[rowIndex][colIndex].show = true;
 
       if (this.tiles[rowIndex][colIndex].value === 0) {
-        console.log('BOMB');
+        // Game over
+        console.log(`You lost the game with ${this.totalScore} points.`);
+
+        // Reset
+        this.totalScore = 0;
+        this.initializeLevel(0);
       } else {
+        // Increase score
         this.increaseScore(this.tiles[rowIndex][colIndex].value);
+
+        if (this.tiles[rowIndex][colIndex].value > 1) {
+          this.tileCount--;
+          if (this.tileCount === 0) {
+            // Won level
+            this.totalScore += this.score;
+            console.log(
+              `You won level ${this.level + 1} with ${this.score} points.`
+            );
+
+            if (this.level === LEVEL_DATA.length - 1) {
+              // Won game
+              console.log(`You won the game with ${this.totalScore} points.`);
+
+              // Reset
+              this.totalScore = 0;
+              this.initializeLevel(0);
+            } else {
+              this.initializeLevel(this.level + 1);
+            }
+          }
+        }
       }
     },
-    onResize() { 
-      this.zoom = Math.max(Math.min(Math.floor(document.documentElement.clientHeight * 10 / 400) * 10, Math.floor(document.documentElement.clientWidth * 10 / 256) * 10), 100);
+    onRightClick(rowIndex: number, colIndex: number) {
+      if (this.tileCount === 0) {
+        return;
+      }
+
+      if (!this.tiles[rowIndex][colIndex].show) {
+        this.tiles[rowIndex][colIndex].memoBomb =
+          !this.tiles[rowIndex][colIndex].memoBomb;
+        console.log(
+          rowIndex,
+          colIndex,
+          this.tiles[rowIndex][colIndex].memoBomb
+        );
+      }
+    },
+    onResize() {
+      this.zoom = Math.max(
+        Math.min(
+          Math.floor((document.documentElement.clientHeight * 10) / 400) * 10,
+          Math.floor((document.documentElement.clientWidth * 10) / 256) * 10
+        ),
+        100
+      );
+    },
+    initializeLevel(level: number) {
+      this.level = level;
+      this.score = 0;
+
+      const preset = [
+        ...LEVEL_DATA[this.level][
+          Math.round(Math.random() * (LEVEL_DATA[this.level].length - 1))
+        ],
+      ];
+
+      // Set amount of x2s and x3s to find before the level is solved
+      this.tileCount = preset[0] + preset[1];
+
+      // Initialize tiles
+      this.tiles = [];
+      for (let rowIndex = 0; rowIndex < SIZE; rowIndex++) {
+        this.tiles[rowIndex] = [];
+        for (let colIndex = 0; colIndex < SIZE; colIndex++) {
+          this.tiles[rowIndex][colIndex] = {
+            value: 1,
+            show: false,
+            memoBomb: false,
+            memo1: false,
+            memo2: false,
+            memo3: false,
+          } as TileType;
+        }
+      }
+
+      const initializeValue = (value: number, amount: number) => {
+        for (let i = 0; i < amount; i++) {
+          // Max tries
+          for (let count = 0; count < MAX_TRIES; count++) {
+            const rowIndex = Math.round(Math.random() * (SIZE - 1));
+            const colIndex = Math.round(Math.random() * (SIZE - 1));
+            if (this.tiles[rowIndex][colIndex].value === 1) {
+              this.tiles[rowIndex][colIndex].value = value;
+              break;
+            }
+            if (count === MAX_TRIES - 1) {
+              console.error("Max tries exceeded. Cannot initialize level.");
+            }
+          }
+        }
+      };
+
+      // Set x2s randomly
+      initializeValue(2, preset[0]);
+
+      // Set x3s randomly
+      initializeValue(3, preset[1]);
+
+      // Set bombs randomly
+      initializeValue(0, preset[2]);
+
+      console.log(preset, this.tiles);
     },
     increaseScore(multiplier: number) {
       this.score = this.score === 0 ? multiplier : this.score * multiplier;
     },
-    bombsRow(rowIndex: number) { 
-      return this.tiles[rowIndex].reduce((previousValue: number, currentValue: TileType) => previousValue + (currentValue.value === 0 ? 1 : 0), 0);
+    bombsRow(rowIndex: number) {
+      return this.tiles[rowIndex].reduce(
+        (previousValue: number, currentValue: TileType) =>
+          previousValue + (currentValue.value === 0 ? 1 : 0),
+        0
+      );
     },
-    sumRow(rowIndex: number) { 
-      return this.tiles[rowIndex].reduce((previousValue: number, currentValue: TileType) => previousValue + currentValue.value, 0);
+    sumRow(rowIndex: number) {
+      return this.tiles[rowIndex].reduce(
+        (previousValue: number, currentValue: TileType) =>
+          previousValue + currentValue.value,
+        0
+      );
     },
-    bombsCol(colIndex: number) { 
-      return this.tiles.reduce((previousValue: number, currentValue: Array<TileType>) => previousValue + (currentValue[colIndex].value === 0 ? 1 : 0), 0);
+    bombsCol(colIndex: number) {
+      return this.tiles.reduce(
+        (previousValue: number, currentValue: Array<TileType>) =>
+          previousValue + (currentValue[colIndex].value === 0 ? 1 : 0),
+        0
+      );
     },
-    sumCol(colIndex: number) { 
-      return this.tiles.reduce((previousValue: number, currentValue: Array<TileType>) => previousValue + currentValue[colIndex].value, 0);
+    sumCol(colIndex: number) {
+      return this.tiles.reduce(
+        (previousValue: number, currentValue: Array<TileType>) =>
+          previousValue + currentValue[colIndex].value,
+        0
+      );
     },
   },
 });
@@ -168,7 +266,7 @@ export default defineComponent({
   <div id="field" class="pixelated" :style="{ zoom: `${zoom}%` }">
     <numeric-display
       id="number-level"
-      :value="level"
+      :value="level + 1"
       :font-style="FontStyles.LEVEL"
     />
     <numeric-display
@@ -185,7 +283,13 @@ export default defineComponent({
     />
     <div id="tiles">
       <template v-for="(row, rowIndex) in tiles" :key="rowIndex">
-        <tile v-for="(tile, colIndex) in row" :key="colIndex" v-bind="tile" @click="onClick(rowIndex, colIndex)" />
+        <tile
+          v-for="(tile, colIndex) in row"
+          :key="colIndex"
+          v-bind="tile"
+          @click="onClick(rowIndex, colIndex)"
+          @contextmenu.prevent="onRightClick(rowIndex, colIndex)"
+        />
         <hint :bombs="bombsRow(rowIndex)" :sum="sumRow(rowIndex)" />
       </template>
       <hint

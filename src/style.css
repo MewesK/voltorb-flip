@@ -6,7 +6,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: rgb(24, 128, 96);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -29,6 +29,7 @@ body {
   display: flex;
   place-items: center;
   min-width: 256px;
+  min-height: 100vh;
 }
 
 #app {
