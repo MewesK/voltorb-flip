@@ -87,6 +87,8 @@ export default defineComponent({
       level: 0,
       totalScore: 0,
       zoom: 1,
+      smooth: false,
+      fullPixel: false,
       // Current
       score: 0,
       tileCount: 0,
@@ -161,10 +163,15 @@ export default defineComponent({
     },
     onResize() {
       this.zoom = Math.max(
-        Math.min(
-          Math.floor((document.documentElement.clientHeight * 10) / 400) * 10,
-          Math.floor((document.documentElement.clientWidth * 10) / 256) * 10
-        ),
+        this.fullPixel ? 
+          Math.min(
+            Math.floor((document.documentElement.clientHeight) / 400) * 100,
+            Math.floor((document.documentElement.clientWidth) / 256) * 100
+          ) : 
+          Math.min(
+            Math.floor((document.documentElement.clientHeight * 100) / 400),
+            Math.floor((document.documentElement.clientWidth * 100) / 256)
+          ),
         100
       );
     },
@@ -263,7 +270,17 @@ export default defineComponent({
 </script>
 
 <template>
-  <div id="field" class="pixelated" :style="{ zoom: `${zoom}%` }">
+  <div id="options">
+    <label id="option-smooth">
+      <input v-model="smooth" type="checkbox" :disabled="fullPixel" />
+      Smooth
+    </label>
+    <label id="option-full-pixel">
+      <input v-model="fullPixel" type="checkbox" @change="onResize"/>
+      Full Pixel
+    </label>
+  </div>
+  <div id="field" :class="{ pixelated: fullPixel || !smooth }" :style="{ zoom: `${zoom}%` }">
     <numeric-display
       id="number-level"
       :value="level + 1"
@@ -281,7 +298,7 @@ export default defineComponent({
       :digits="5"
       :font-style="FontStyles.SCORE"
     />
-    <div id="tiles">
+    <div id="tiles" @contextmenu.prevent>
       <template v-for="(row, rowIndex) in tiles" :key="rowIndex">
         <tile
           v-for="(tile, colIndex) in row"
@@ -351,12 +368,18 @@ export default defineComponent({
   gap: 8px;
 }
 
-@media (min-width: 512px) {
-  #field {
-    image-rendering: -moz-crisp-edges;
-    image-rendering: -webkit-crisp-edges;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-  }
+.pixelated {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#options {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: grid;
+  grid-column: auto;
 }
 </style>
