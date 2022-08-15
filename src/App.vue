@@ -94,7 +94,7 @@ export default defineComponent({
     };
   },
   created() {
-    this.initializeLevel(0);
+    this.reset();
   },
   mounted() {
     window.addEventListener("resize", this.onResize);
@@ -121,7 +121,7 @@ export default defineComponent({
         );
 
         // Reset
-        this.reset();
+        setTimeout(this.reset, 1000);
       } else {
         // Increase score
         this.increaseScore(this.tiles[rowIndex][colIndex].value);
@@ -140,9 +140,10 @@ export default defineComponent({
               console.log(`You won the game with ${this.totalScore} points.`);
 
               // Reset
-              this.reset();
+              setTimeout(this.reset, 1000);
             } else {
-              this.initializeLevel(this.level + 1);
+              // Next level
+              setTimeout(() => this.initializeLevel(this.level + 1), 1000);
             }
           }
         }
@@ -254,10 +255,8 @@ export default defineComponent({
       );
     },
     reset() {
-      setTimeout(() => {
-        this.totalScore = 0;
-        this.initializeLevel(0);
-      }, 1000);
+      this.totalScore = 0;
+      this.initializeLevel(0);
     },
   },
 });
