@@ -86,7 +86,7 @@ export default defineComponent({
     return {
       level: 0,
       totalScore: 0,
-      zoom: 1,
+      scale: 1,
       smooth: false,
       fullPixel: false,
       // Current
@@ -162,17 +162,17 @@ export default defineComponent({
       }
     },
     onResize() {
-      this.zoom = Math.max(
+      this.scale = Math.max(
         this.fullPixel ? 
           Math.min(
-            Math.floor((document.documentElement.clientHeight) / 400) * 100,
-            Math.floor((document.documentElement.clientWidth) / 256) * 100
+            Math.floor(document.documentElement.clientHeight / 400),
+            Math.floor(document.documentElement.clientWidth / 256)
           ) : 
           Math.min(
-            Math.floor((document.documentElement.clientHeight * 100) / 400),
-            Math.floor((document.documentElement.clientWidth * 100) / 256)
+            Math.floor(document.documentElement.clientHeight * 100 / 400) / 100,
+            Math.floor(document.documentElement.clientWidth * 100 / 256) / 100
           ),
-        100
+        1
       );
     },
     initializeLevel(level: number) {
@@ -280,7 +280,7 @@ export default defineComponent({
       Full Pixel
     </label>
   </div>
-  <div id="field" :class="{ pixelated: fullPixel || !smooth }" :style="{ zoom: `${zoom}%` }">
+  <div id="field" :class="{ pixelated: fullPixel || !smooth }" :style="{ transform: `scale(${scale})` }">
     <numeric-display
       id="number-level"
       :value="level + 1"
@@ -338,6 +338,7 @@ export default defineComponent({
   margin: 0;
   padding: 0;
   text-align: initial;
+  transform-origin: center 0;
 }
 
 #number-level {

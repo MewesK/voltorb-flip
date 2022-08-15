@@ -64,16 +64,18 @@ export default defineComponent({
     <div class="tile-inner">
       <div class="tile-inner-front">
         <img src="../assets/tile_back.png" />
-        <img v-if="memo1" src="../assets/tile_memo_1.png" />
-        <img v-if="memo2" src="../assets/tile_memo_2.png" />
-        <img v-if="memo3" src="../assets/tile_memo_3.png" />
-        <img v-if="memoBomb" src="../assets/tile_memo_bomb.png" />
+        <transition-group name="fade">
+          <img v-if="memo1" src="../assets/tile_memo_1.png" />
+          <img v-if="memo2" src="../assets/tile_memo_2.png" />
+          <img v-if="memo3" src="../assets/tile_memo_3.png" />
+          <img v-if="memoBomb" src="../assets/tile_memo_bomb.png" />
+        </transition-group>
       </div>
       <div class="tile-inner-back">
         <img :src="path" />
       </div>
     </div>
-    <transition name="tile-cursor">
+    <transition name="fade">
       <img
         v-if="selected"
         class="tile-cursor"
@@ -88,6 +90,9 @@ export default defineComponent({
   cursor: pointer;
   line-height: 0;
 }
+
+/* Flip */
+
 .tile-inner {
   transition: transform 0.2s;
   transform-style: preserve-3d;
@@ -106,19 +111,23 @@ export default defineComponent({
   position: absolute;
 }
 
+/* Cursor */
+
 .tile-cursor {
   position: relative;
   top: -2px;
   left: -2px;
 }
 
-.tile-cursor-enter-active,
-.tile-cursor-leave-active {
+/* Transition */
+
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.1s linear;
 }
 
-.tile-cursor-enter-from,
-.tile-cursor-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 </style>
