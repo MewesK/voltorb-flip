@@ -33,6 +33,11 @@ export default defineComponent({
       default: false,
     },
   },
+  data() { 
+    return {
+      selected: false,
+    };
+  },
   computed: {
     path() {
       switch (this.value) {
@@ -51,7 +56,11 @@ export default defineComponent({
 </script>
 
 <template>
-  <div :class="{ tile: true, show }">
+  <div
+    :class="{ tile: true, show }"
+    @mouseover="selected = true"
+    @mouseleave="selected = false"
+  >
     <div class="tile-inner">
       <div class="tile-inner-front">
         <img src="../assets/tile_back.png" />
@@ -64,11 +73,19 @@ export default defineComponent({
         <img :src="path" />
       </div>
     </div>
+    <transition name="tile-cursor">
+      <img
+        v-if="selected"
+        class="tile-cursor"
+        src="../assets/cursor.png"
+      />
+    </transition>
   </div>
 </template>
 
 <style scoped>
 .tile {
+  cursor: pointer;
   line-height: 0;
 }
 .tile-inner {
@@ -87,5 +104,21 @@ export default defineComponent({
 }
 .tile-inner-front img {
   position: absolute;
+}
+
+.tile-cursor {
+  position: relative;
+  top: -2px;
+  left: -2px;
+}
+
+.tile-cursor-enter-active,
+.tile-cursor-leave-active {
+  transition: opacity 0.1s linear;
+}
+
+.tile-cursor-enter-from,
+.tile-cursor-leave-to {
+  opacity: 0;
 }
 </style>
