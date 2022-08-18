@@ -1,5 +1,7 @@
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, PropType } from "vue";
+
+import { TileValue } from "../types";
 
 import tile1 from "../assets/tile_1.png";
 import tile2 from "../assets/tile_2.png";
@@ -9,7 +11,7 @@ import tileBomb from "../assets/tile_bomb.png";
 export default defineComponent({
   props: {
     value: {
-      type: Number,
+      type: Number as PropType<TileValue>,
       required: true,
     },
     show: {
@@ -41,11 +43,11 @@ export default defineComponent({
   computed: {
     path() {
       switch (this.value) {
-        case 1:
+        case TileValue.X1:
           return tile1;
-        case 2:
+        case TileValue.X2:
           return tile2;
-        case 3:
+        case TileValue.X3:
           return tile3;
         default:
           return tileBomb;

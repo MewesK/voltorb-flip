@@ -4,92 +4,45 @@ import { defineComponent } from "vue";
 import Hint from "./components/Hint.vue";
 import NumericDisplay, { FontStyles } from "./components/NumericDisplay.vue";
 import Tile from "./components/Tile.vue";
+import TextBox from "./components/TextBox.vue";
 
-export interface TileType {
-  value: number;
-  show: boolean;
-  memoBomb: boolean;
-  memo1: boolean;
-  memo2: boolean;
-  memo3: boolean;
-}
-
-const SIZE = 5;
-const MAX_TRIES = 1000;
-
-// ×2s, ×3s, Voltorb
-const LEVEL_DATA = [
-  [
-    [3, 1, 6],
-    [0, 3, 6],
-    [5, 0, 6],
-    [2, 2, 6],
-    [4, 1, 6],
-  ],
-  [
-    [1, 3, 7],
-    [6, 0, 7],
-    [3, 2, 7],
-    [0, 4, 7],
-    [5, 1, 7],
-  ],
-  [
-    [2, 3, 8],
-    [7, 0, 8],
-    [4, 2, 8],
-    [1, 4, 8],
-    [6, 1, 8],
-  ],
-  [
-    [3, 3, 8],
-    [0, 5, 8],
-    [8, 0, 10],
-    [5, 2, 10],
-    [2, 4, 10],
-  ],
-  [
-    [7, 1, 10],
-    [4, 3, 10],
-    [1, 5, 10],
-    [9, 0, 10],
-    [6, 2, 10],
-  ],
-  [
-    [3, 4, 10],
-    [0, 6, 10],
-    [8, 1, 10],
-    [5, 3, 10],
-    [2, 5, 10],
-  ],
-  [
-    [7, 2, 10],
-    [4, 4, 10],
-    [1, 6, 13],
-    [9, 1, 13],
-    [6, 3, 10],
-  ],
-  [
-    [0, 7, 10],
-    [8, 2, 10],
-    [5, 4, 10],
-    [2, 6, 10],
-    [7, 3, 10],
-  ],
-] as Array<Array<Array<number>>>;
+import { TileType, TileValue, GameState } from "./types";
+import { LEVELS } from "./constants";
+import {
+  distributeTile,
+  initializeField,
+  randomLevelPreset,
+  bombsinColumn,
+  bombsInRow,
+  sumInColumn,
+  sumInRow,
+  calculateScale,
+} from "./utils";
 
 export default defineComponent({
-  components: { Hint, NumericDisplay, Tile },
+  components: { Hint, NumericDisplay, TextBox, Tile },
   setup() {
-    return { FontStyles };
+    return {
+      FontStyles,
+      bombsinColumn,
+      bombsInRow,
+      sumInColumn,
+      sumInRow,
+      calculateScale,
+    };
   },
   data() {
     return {
-      level: 0,
-      totalScore: 0,
+      // Options
       scale: 1,
       smooth: false,
       fullPixel: false,
-      // Current
+      // Current game
+      level: 0,
+      totalScore: 0,
+      state: GameState.PLAYING,
+      message: [] as Array<string>,
+      // Current level
       score: 0,
       tileCount: 0,
       tiles: [[]] as Array<Array<TileType>>,
@@ -107,7 +60,7 @@ export default defineComponent({
   },
   methods: {
     onClick(rowIndex: number, colIndex: number) {
-      if (this.tileCount === 0) {
+      if (this.state !== GameState.PLAYING) {
         return;
       }
 
@@ -116,43 +69,49 @@ export default defineComponent({
 
       if (this.tiles[rowIndex][colIndex].value === 0) {
         // Game over
-        console.log(
+        this.state = GameState.GAME_OVER;
+        this.message = [
           `You lost the game in level ${this.level + 1} with ${
             this.totalScore
-          } points.`
-        );
-
-        // Reset
-        setTimeout(this.reset, 1000);
+          } points.`,
+        ];
       } else {
         // Increase score
         this.increaseScore(this.tiles[rowIndex][colIndex].value);
 
         if (this.tiles[rowIndex][colIndex].value > 1) {
           this.tileCount--;
+
+          // Won level
           if (this.tileCount === 0) {
-            // Won level
             this.totalScore += this.score;
-            console.log(
-              `You won level ${this.level + 1} with ${this.score} points.`
-            );
+            this.state = GameState.WON_LEVEL;
+            this.message = [
+              `You won level ${this.level + 1} with ${this.score} points.`,
+            ];
 
-            if (this.level === LEVEL_DATA.length - 1) {
+            if (this.level === LEVELS.length - 1) {
               // Won game
-              console.log(`You won the game with ${this.totalScore} points.`);
-
-              // Reset
-              setTimeout(this.reset, 1000);
-            } else {
-              // Next level
-              setTimeout(() => this.initializeLevel(this.level + 1), 1000);
+              this.state = GameState.WON_GAME;
+              this.message.push(
+                `You won the game with ${this.totalScore} points.`
+              );
             }
           }
         }
       }
     },
+    onClose() {
+      if (this.state === GameState.WON_LEVEL) {
+        // Next level
+        this.initializeLevel(this.level + 1);
+      } else {
+        // Reset
+        this.reset();
+      }
+    },
     onRightClick(rowIndex: number, colIndex: number) {
-      if (this.tileCount === 0) {
+      if (this.state !== GameState.PLAYING) {
         return;
       }
 
@@ -162,104 +121,26 @@ export default defineComponent({
       }
     },
     onResize() {
-      this.scale = Math.max(
-        this.fullPixel ? 
-          Math.min(
-            Math.floor(document.documentElement.clientHeight / 400),
-            Math.floor(document.documentElement.clientWidth / 256)
-          ) : 
-          Math.min(
-            Math.floor(document.documentElement.clientHeight * 100 / 400) / 100,
-            Math.floor(document.documentElement.clientWidth * 100 / 256) / 100
-          ),
-        1
-      );
+      this.scale = calculateScale(this.fullPixel);
     },
     initializeLevel(level: number) {
       this.level = level;
       this.score = 0;
+      this.state = GameState.PLAYING;
 
-      const preset = [
-        ...LEVEL_DATA[this.level][
-          Math.round(Math.random() * (LEVEL_DATA[this.level].length - 1))
-        ],
-      ];
+      const preset = randomLevelPreset(this.tiles, this.level);
 
       // Set amount of x2s and x3s to find before the level is solved
-      this.tileCount = preset[0] + preset[1];
+      this.tileCount = preset.x2s + preset.x3s;
 
       // Initialize tiles
-      this.tiles = [];
-      for (let rowIndex = 0; rowIndex < SIZE; rowIndex++) {
-        this.tiles[rowIndex] = [];
-        for (let colIndex = 0; colIndex < SIZE; colIndex++) {
-          this.tiles[rowIndex][colIndex] = {
-            value: 1,
-            show: false,
-            memoBomb: false,
-            memo1: false,
-            memo2: false,
-            memo3: false,
-          } as TileType;
-        }
-      }
-
-      const initializeValue = (value: number, amount: number) => {
-        for (let i = 0; i < amount; i++) {
-          // Max tries
-          for (let count = 0; count < MAX_TRIES; count++) {
-            const rowIndex = Math.round(Math.random() * (SIZE - 1));
-            const colIndex = Math.round(Math.random() * (SIZE - 1));
-            if (this.tiles[rowIndex][colIndex].value === 1) {
-              this.tiles[rowIndex][colIndex].value = value;
-              break;
-            }
-            if (count === MAX_TRIES - 1) {
-              console.error("Max tries exceeded. Cannot initialize level.");
-            }
-          }
-        }
-      };
-
-      // Set x2s randomly
-      initializeValue(2, preset[0]);
-
-      // Set x3s randomly
-      initializeValue(3, preset[1]);
-
-      // Set bombs randomly
-      initializeValue(0, preset[2]);
+      this.tiles = initializeField(this.tiles, TileValue.X1);
+      this.tiles = distributeTile(this.tiles, TileValue.X2, preset.x2s);
+      this.tiles = distributeTile(this.tiles, TileValue.X3, preset.x3s);
+      this.tiles = distributeTile(this.tiles, TileValue.BOMB, preset.bombs);
     },
     increaseScore(multiplier: number) {
       this.score = this.score === 0 ? multiplier : this.score * multiplier;
-    },
-    bombsRow(rowIndex: number) {
-      return this.tiles[rowIndex].reduce(
-        (previousValue: number, currentValue: TileType) =>
-          previousValue + (currentValue.value === 0 ? 1 : 0),
-        0
-      );
-    },
-    sumRow(rowIndex: number) {
-      return this.tiles[rowIndex].reduce(
-        (previousValue: number, currentValue: TileType) =>
-          previousValue + currentValue.value,
-        0
-      );
-    },
-    bombsCol(colIndex: number) {
-      return this.tiles.reduce(
-        (previousValue: number, currentValue: Array<TileType>) =>
-          previousValue + (currentValue[colIndex].value === 0 ? 1 : 0),
-        0
-      );
-    },
-    sumCol(colIndex: number) {
-      return this.tiles.reduce(
-        (previousValue: number, currentValue: Array<TileType>) =>
-          previousValue + currentValue[colIndex].value,
-        0
-      );
     },
     reset() {
       this.totalScore = 0;
@@ -276,11 +157,15 @@ export default defineComponent({
       Smooth
     </label>
     <label id="option-full-pixel">
-      <input v-model="fullPixel" type="checkbox" @change="onResize"/>
+      <input v-model="fullPixel" type="checkbox" @change="onResize" />
       Full Pixel
     </label>
   </div>
-  <div id="field" :class="{ pixelated: fullPixel || !smooth }" :style="{ transform: `scale(${scale})` }">
+  <div
+    id="field"
+    :class="{ pixelated: fullPixel || !smooth }"
+    :style="{ transform: `scale(${scale})` }"
+  >
     <numeric-display
       id="number-level"
       :value="level + 1"
@@ -307,13 +192,16 @@ export default defineComponent({
           @click="onClick(rowIndex, colIndex)"
           @contextmenu.prevent="onRightClick(rowIndex, colIndex)"
         />
-        <hint :bombs="bombsRow(rowIndex)" :sum="sumRow(rowIndex)" />
+        <hint
+          :bombs="bombsInRow(tiles, rowIndex)"
+          :sum="sumInRow(tiles, rowIndex)"
+        />
       </template>
       <hint
         v-for="(n, colIndex) in tiles[0].length"
         :key="colIndex"
-        :bombs="bombsCol(colIndex)"
-        :sum="sumCol(colIndex)"
+        :bombs="bombsinColumn(tiles, colIndex)"
+        :sum="sumInColumn(tiles, colIndex)"
       />
     </div>
     <div id="memo">
@@ -326,6 +214,7 @@ export default defineComponent({
         <div />
       </div>
     </div>
+    <text-box :pages="message" @close="onClose" />
   </div>
 </template>
 
