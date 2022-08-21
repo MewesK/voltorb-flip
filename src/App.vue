@@ -2,6 +2,7 @@
 import { defineComponent } from "vue";
 
 import Hint from "./components/Hint.vue";
+import MemoMenu from "./components/MemoMenu.vue";
 import NumericDisplay, { FontStyles } from "./components/NumericDisplay.vue";
 import Tile from "./components/Tile.vue";
 import TextBox from "./components/TextBox.vue";
@@ -17,7 +18,7 @@ import {
 } from "./utils";
 
 export default defineComponent({
-  components: { Hint, NumericDisplay, TextBox, Tile },
+  components: { Hint, MemoMenu, NumericDisplay, TextBox, Tile },
   setup() {
     return { FontStyles };
   },
@@ -31,6 +32,7 @@ export default defineComponent({
       level: 0,
       totalScore: 0,
       state: GameState.PLAYING,
+      memoType: null as TileValue | null,
       message: [] as Array<string>,
       // Current level
       score: 0,
@@ -205,16 +207,7 @@ export default defineComponent({
         v-bind="hints.columns[colIndex]"
       />
     </div>
-    <div id="memo">
-      <div id="memo-toggle" />
-      <div id="memo-menu">
-        <div id="memo-button-bomb" />
-        <div id="memo-button-1" />
-        <div id="memo-button-2" />
-        <div id="memo-button-3" />
-        <div />
-      </div>
-    </div>
+    <memo-menu v-model="memoType" />
     <text-box :pages="message" @close="onClose" />
   </div>
 </template>
