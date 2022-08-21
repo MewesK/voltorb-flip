@@ -43,8 +43,8 @@ export default defineComponent({
     this.reset();
   },
   mounted() {
-    window.addEventListener("resize", this.onResize);
     this.onResize();
+    window.addEventListener("resize", this.onResize);
   },
   unmounted() {
     window.removeEventListener("resize", this.onResize);
@@ -61,35 +61,24 @@ export default defineComponent({
       // Show tile
       this.tiles[rowIndex][colIndex].show = true;
 
+      // Check for bomb
       if (this.tiles[rowIndex][colIndex].value === 0) {
-        // Game over
-        this.state = GameState.GAME_OVER;
-        this.message = [
-          `You lost the game in level ${this.level + 1} with ${
-            this.totalScore
-          } points.`,
-        ];
+        this.changeState(GameState.GAME_OVER);
       } else {
-        // Increase score
         this.increaseScore(this.tiles[rowIndex][colIndex].value);
 
+        // Check for multiplier
         if (this.tiles[rowIndex][colIndex].value > 1) {
           this.tileCount--;
 
-          // Won level
+          // Check for end of level
           if (this.tileCount === 0) {
             this.totalScore += this.score;
-            this.state = GameState.WON_LEVEL;
-            this.message = [
-              `You won level ${this.level + 1} with ${this.score} points.`,
-            ];
 
             if (this.level === LEVELS.length - 1) {
-              // Won game
-              this.state = GameState.WON_GAME;
-              this.message.push(
-                `You won the game with ${this.totalScore} points.`
-              );
+              this.changeState(GameState.WON_GAME);
+            } else {
+              this.changeState(GameState.WON_LEVEL);
             }
           }
         }
@@ -97,12 +86,13 @@ export default defineComponent({
     },
     onClose() {
       if (this.state === GameState.WON_LEVEL) {
-        // Next level
         this.initializeLevel(this.level + 1);
       } else {
-        // Reset
         this.reset();
       }
+    },
+    onResize() {
+      this.scale = calculateScale(this.fullPixel);
     },
     onRightClick(rowIndex: number, colIndex: number) {
       if (this.state !== GameState.PLAYING) {
@@ -114,8 +104,31 @@ export default defineComponent({
           !this.tiles[rowIndex][colIndex].memoBomb;
       }
     },
-    onResize() {
-      this.scale = calculateScale(this.fullPixel);
+    changeState(state: GameState) {
+      this.state = state;
+      switch (state) {
+        case GameState.GAME_OVER:
+          this.message = [
+            `You lost the game in level ${this.level + 1} with ${
+              this.totalScore
+            } points.`,
+          ];
+          break;
+        case GameState.WON_GAME:
+          this.message = [
+            `You won level ${this.level + 1} with ${this.score} points.`,
+            `You won the game with ${this.totalScore} points.`,
+          ];
+          break;
+        case GameState.WON_LEVEL:
+          this.message = [
+            `You won level ${this.level + 1} with ${this.score} points.`,
+          ];
+          break;
+      }
+    },
+    increaseScore(multiplier: number) {
+      this.score = this.score === 0 ? multiplier : this.score * multiplier;
     },
     initializeLevel(level: number) {
       this.level = level;
@@ -133,9 +146,6 @@ export default defineComponent({
       this.tiles = distributeTile(this.tiles, TileValue.X3, preset.x3s);
       this.tiles = distributeTile(this.tiles, TileValue.BOMB, preset.bombs);
       this.hints = calculateHints(this.tiles);
-    },
-    increaseScore(multiplier: number) {
-      this.score = this.score === 0 ? multiplier : this.score * multiplier;
     },
     reset() {
       this.totalScore = 0;
