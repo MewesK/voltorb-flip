@@ -60,7 +60,7 @@ export default defineComponent({
   },
   methods: {
     onClick(rowIndex: number, colIndex: number) {
-      if (this.state !== GameState.PLAYING) {
+      if (this.state !== GameState.PLAYING || this.tiles[rowIndex][colIndex].show) {
         return;
       }
 
