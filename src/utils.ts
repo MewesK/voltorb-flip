@@ -1,5 +1,44 @@
 import { LEVELS, MAX_TRIES, SIZE } from "./constants";
-import { LevelPreset, TileType, TileValue } from "./types";
+import { HintType, LevelPreset, TileType, TileValue } from "./types";
+
+export function calculateHints(tiles: Array<Array<TileType>>): {
+  rows: HintType[];
+  columns: HintType[];
+} {
+  const hints = {
+    rows: [] as Array<HintType>,
+    columns: [] as Array<HintType>,
+  };
+  for (let index = 0; index < SIZE; index++) {
+    hints.columns[index] = { bombs: 0, sum: 0 } as HintType;
+    hints.rows[index] = { bombs: 0, sum: 0 } as HintType;
+    for (let subIndex = 0; subIndex < SIZE; subIndex++) {
+      hints.columns[index].bombs +=
+        tiles[subIndex][index].value === TileValue.BOMB ? 1 : 0;
+      hints.columns[index].sum += tiles[subIndex][index].value;
+
+      hints.rows[index].bombs +=
+        tiles[index][subIndex].value === TileValue.BOMB ? 1 : 0;
+      hints.rows[index].sum += tiles[index][subIndex].value;
+    }
+  }
+  return hints;
+}
+
+export function calculateScale(fullPixel: boolean): number {
+  return Math.max(
+    fullPixel
+      ? Math.min(
+          Math.floor(document.documentElement.clientHeight / 400),
+          Math.floor(document.documentElement.clientWidth / 256)
+        )
+      : Math.min(
+          Math.floor((document.documentElement.clientHeight * 100) / 400) / 100,
+          Math.floor((document.documentElement.clientWidth * 100) / 256) / 100
+        ),
+    1
+  );
+}
 
 /**
  * Distributes a tile value randomly on the field.
@@ -51,68 +90,6 @@ export function initializeField(
   return tiles;
 }
 
-export function randomLevelPreset(
-  tiles: Array<Array<TileType>>,
-  level: number
-): LevelPreset {
+export function randomLevelPreset(level: number): LevelPreset {
   return LEVELS[level][Math.round(Math.random() * (LEVELS[level].length - 1))];
-}
-
-export function bombsinColumn(
-  tiles: Array<Array<TileType>>,
-  colIndex: number
-): number {
-  return tiles.reduce(
-    (previousValue: number, currentValue: Array<TileType>) =>
-      previousValue + (currentValue[colIndex].value === 0 ? 1 : 0),
-    0
-  );
-}
-
-export function bombsInRow(
-  tiles: Array<Array<TileType>>,
-  rowIndex: number
-): number {
-  return tiles[rowIndex].reduce(
-    (previousValue: number, currentValue: TileType) =>
-      previousValue + (currentValue.value === 0 ? 1 : 0),
-    0
-  );
-}
-
-export function sumInColumn(
-  tiles: Array<Array<TileType>>,
-  colIndex: number
-): number {
-  return tiles.reduce(
-    (previousValue: number, currentValue: Array<TileType>) =>
-      previousValue + currentValue[colIndex].value,
-    0
-  );
-}
-
-export function sumInRow(
-  tiles: Array<Array<TileType>>,
-  rowIndex: number
-): number {
-  return tiles[rowIndex].reduce(
-    (previousValue: number, currentValue: TileType) =>
-      previousValue + currentValue.value,
-    0
-  );
-}
-
-export function calculateScale(fullPixel: boolean): number {
-  return Math.max(
-    fullPixel
-      ? Math.min(
-          Math.floor(document.documentElement.clientHeight / 400),
-          Math.floor(document.documentElement.clientWidth / 256)
-        )
-      : Math.min(
-          Math.floor((document.documentElement.clientHeight * 100) / 400) / 100,
-          Math.floor((document.documentElement.clientWidth * 100) / 256) / 100
-        ),
-    1
-  );
 }

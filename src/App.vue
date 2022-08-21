@@ -6,30 +6,20 @@ import NumericDisplay, { FontStyles } from "./components/NumericDisplay.vue";
 import Tile from "./components/Tile.vue";
 import TextBox from "./components/TextBox.vue";
 
-import { TileType, TileValue, GameState } from "./types";
+import { TileType, TileValue, GameState, HintType, HintsType } from "./types";
 import { LEVELS } from "./constants";
 import {
   distributeTile,
   initializeField,
   randomLevelPreset,
-  bombsinColumn,
-  bombsInRow,
-  sumInColumn,
-  sumInRow,
   calculateScale,
+  calculateHints,
 } from "./utils";
 
 export default defineComponent({
   components: { Hint, NumericDisplay, TextBox, Tile },
   setup() {
-    return {
-      FontStyles,
-      bombsinColumn,
-      bombsInRow,
-      sumInColumn,
-      sumInRow,
-      calculateScale,
-    };
+    return { FontStyles };
   },
   data() {
     return {
@@ -46,6 +36,7 @@ export default defineComponent({
       score: 0,
       tileCount: 0,
       tiles: [[]] as Array<Array<TileType>>,
+      hints: { columns: [], rows: [] } as HintsType,
     };
   },
   created() {
@@ -60,7 +51,10 @@ export default defineComponent({
   },
   methods: {
     onClick(rowIndex: number, colIndex: number) {
-      if (this.state !== GameState.PLAYING || this.tiles[rowIndex][colIndex].show) {
+      if (
+        this.state !== GameState.PLAYING ||
+        this.tiles[rowIndex][colIndex].show
+      ) {
         return;
       }
 
@@ -128,7 +122,7 @@ export default defineComponent({
       this.score = 0;
       this.state = GameState.PLAYING;
 
-      const preset = randomLevelPreset(this.tiles, this.level);
+      const preset = randomLevelPreset(this.level);
 
       // Set amount of x2s and x3s to find before the level is solved
       this.tileCount = preset.x2s + preset.x3s;
@@ -138,6 +132,7 @@ export default defineComponent({
       this.tiles = distributeTile(this.tiles, TileValue.X2, preset.x2s);
       this.tiles = distributeTile(this.tiles, TileValue.X3, preset.x3s);
       this.tiles = distributeTile(this.tiles, TileValue.BOMB, preset.bombs);
+      this.hints = calculateHints(this.tiles);
     },
     increaseScore(multiplier: number) {
       this.score = this.score === 0 ? multiplier : this.score * multiplier;
@@ -192,16 +187,12 @@ export default defineComponent({
           @click="onClick(rowIndex, colIndex)"
           @contextmenu.prevent="onRightClick(rowIndex, colIndex)"
         />
-        <hint
-          :bombs="bombsInRow(tiles, rowIndex)"
-          :sum="sumInRow(tiles, rowIndex)"
-        />
+        <hint v-bind="hints.rows[rowIndex]" />
       </template>
       <hint
         v-for="(n, colIndex) in tiles[0].length"
         :key="colIndex"
-        :bombs="bombsinColumn(tiles, colIndex)"
-        :sum="sumInColumn(tiles, colIndex)"
+        v-bind="hints.columns[colIndex]"
       />
     </div>
     <div id="memo">

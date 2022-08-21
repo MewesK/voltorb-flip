@@ -13,6 +13,16 @@ export interface TileType {
   memo3: boolean;
 }
 
+export interface HintsType {
+  columns: Array<HintType>;
+  rows: Array<HintType>;
+}
+
+export interface HintType {
+  sum: number;
+  bombs: number;
+}
+
 export enum TileValue {
   BOMB = 0,
   X1 = 1,
