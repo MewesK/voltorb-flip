@@ -7,7 +7,7 @@ import NumericDisplay, { FontStyles } from "./components/NumericDisplay.vue";
 import Tile from "./components/Tile.vue";
 import TextBox from "./components/TextBox.vue";
 
-import { TileType, TileValue, GameState, HintType, HintsType } from "./types";
+import { TileType, TileValue, GameState, HintsType } from "./types";
 import { LEVELS } from "./constants";
 import {
   distributeTile,
@@ -60,29 +60,51 @@ export default defineComponent({
         return;
       }
 
-      // Show tile
-      this.tiles[rowIndex][colIndex].show = true;
+      // Check for memo mode
+      if (this.memoType === null) {
+        // Show tile
+        this.tiles[rowIndex][colIndex].show = true;
 
-      // Check for bomb
-      if (this.tiles[rowIndex][colIndex].value === 0) {
-        this.changeState(GameState.GAME_OVER);
-      } else {
-        this.increaseScore(this.tiles[rowIndex][colIndex].value);
+        // Check for bomb
+        if (this.tiles[rowIndex][colIndex].value === 0) {
+          this.changeState(GameState.GAME_OVER);
+        } else {
+          this.increaseScore(this.tiles[rowIndex][colIndex].value);
 
-        // Check for multiplier
-        if (this.tiles[rowIndex][colIndex].value > 1) {
-          this.tileCount--;
+          // Check for multiplier
+          if (this.tiles[rowIndex][colIndex].value > 1) {
+            this.tileCount--;
 
-          // Check for end of level
-          if (this.tileCount === 0) {
-            this.totalScore += this.score;
+            // Check for end of level
+            if (this.tileCount === 0) {
+              this.totalScore += this.score;
 
-            if (this.level === LEVELS.length - 1) {
-              this.changeState(GameState.WON_GAME);
-            } else {
-              this.changeState(GameState.WON_LEVEL);
+              if (this.level === LEVELS.length - 1) {
+                this.changeState(GameState.WON_GAME);
+              } else {
+                this.changeState(GameState.WON_LEVEL);
+              }
             }
           }
+        }
+      } else {
+        switch (this.memoType) {
+          case TileValue.BOMB:
+            this.tiles[rowIndex][colIndex].memoBomb =
+              !this.tiles[rowIndex][colIndex].memoBomb;
+            break;
+          case TileValue.X1:
+            this.tiles[rowIndex][colIndex].memo1 =
+              !this.tiles[rowIndex][colIndex].memo1;
+            break;
+          case TileValue.X2:
+            this.tiles[rowIndex][colIndex].memo2 =
+              !this.tiles[rowIndex][colIndex].memo2;
+            break;
+          case TileValue.X3:
+            this.tiles[rowIndex][colIndex].memo3 =
+              !this.tiles[rowIndex][colIndex].memo3;
+            break;
         }
       }
     },
@@ -158,16 +180,6 @@ export default defineComponent({
 </script>
 
 <template>
-  <div id="options">
-    <label id="option-smooth">
-      <input v-model="smooth" type="checkbox" :disabled="fullPixel" />
-      Smooth
-    </label>
-    <label id="option-full-pixel">
-      <input v-model="fullPixel" type="checkbox" @change="onResize" />
-      Full Pixel
-    </label>
-  </div>
   <div
     id="field"
     :class="{ pixelated: fullPixel || !smooth }"
@@ -195,6 +207,7 @@ export default defineComponent({
         <tile
           v-for="(tile, colIndex) in row"
           :key="colIndex"
+          :memo-mode="memoType !== null"
           v-bind="tile"
           @click="onClick(rowIndex, colIndex)"
           @contextmenu.prevent="onRightClick(rowIndex, colIndex)"
@@ -208,6 +221,16 @@ export default defineComponent({
       />
     </div>
     <memo-menu v-model="memoType" />
+    <div id="options">
+      <label id="option-smooth">
+        <input v-model="smooth" type="checkbox" :disabled="fullPixel" />
+        Smooth
+      </label>
+      <label id="option-full-pixel">
+        <input v-model="fullPixel" type="checkbox" @change="onResize" />
+        Full Pixel
+      </label>
+    </div>
     <text-box :pages="message" @close="onClose" />
   </div>
 </template>
@@ -252,18 +275,47 @@ export default defineComponent({
   gap: 8px;
 }
 
-.pixelated {
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-crisp-edges;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
 #options {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 370px;
+  left: 198px;
   display: grid;
   grid-column: auto;
+  font-size: 12px;
+  line-height: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+#options label {
+  display: flex;
+  align-items: center;
+}
+
+#options input[type="checkbox"] {
+  transform: scale(70%);
+  margin: 0 2px 0 0;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  background-color: rgba(255, 255, 255, 0.2);
+  font: inherit;
+  color: rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  display: grid;
+  place-content: center;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 18px 18px rgba(255, 255, 255, 0.9);
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
 }
 </style>

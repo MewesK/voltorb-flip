@@ -8,7 +8,13 @@ import tile2 from "../assets/tile_2.png";
 import tile3 from "../assets/tile_3.png";
 import tileBomb from "../assets/tile_bomb.png";
 
+import cursor from "../assets/cursor.png";
+import cursorMemo from "../assets/cursor_memo.png";
+
 export default defineComponent({
+  setup() {
+    return { cursor, cursorMemo };
+  },
   props: {
     value: {
       type: Number as PropType<TileValue>,
@@ -17,6 +23,10 @@ export default defineComponent({
     show: {
       type: Boolean,
       required: true,
+    },
+    memoMode: {
+      type: Boolean,
+      default: false,
     },
     memo1: {
       type: Boolean,
@@ -35,7 +45,7 @@ export default defineComponent({
       default: false,
     },
   },
-  data() { 
+  data() {
     return {
       selected: false,
     };
@@ -79,9 +89,9 @@ export default defineComponent({
     </div>
     <transition name="fade">
       <img
-        v-if="selected"
         class="tile-cursor"
-        src="../assets/cursor.png"
+        :style="{ opacity: selected ? 1 : 0 }"
+        :src="memoMode ? cursorMemo : cursor"
       />
     </transition>
   </div>

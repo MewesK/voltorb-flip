@@ -60,7 +60,7 @@ export default defineComponent({
         "
       />
     </div>
-    <div v-if="open" class="memo-menu">
+    <div :style="{ opacity: open ? 1 : 0 }" class="memo-menu">
       <img
         :src="modelValue === TileValue.BOMB ? memoBombOn : memoBombOff"
         @click="onChange(TileValue.BOMB)"
@@ -85,7 +85,7 @@ export default defineComponent({
 .memo {
   position: absolute;
   right: 5px;
-  top: 209px;
+  top: 206px;
 }
 .memo-menu {
   box-sizing: border-box;
